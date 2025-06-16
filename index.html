@@ -80,7 +80,7 @@
       display: flex;
       align-items: center;
       font-weight: bold;
-      margin-bottom: 10px; /* MOVED INPUT LINE UP */
+      margin-bottom: 10px; /* input line slightly raised */
     }
     #terminalPrompt {
       margin-right: 10px;
@@ -109,7 +109,7 @@
   <div id="login">
     <div id="terminal">
       <div id="terminalOutput"></div>
-      <div id="terminalInputLine">
+      <div id="terminalInputLine" style="display:none;">
         <div id="terminalPrompt">&gt;</div>
         <input id="terminalInput" autocomplete="off" spellcheck="false" autofocus />
       </div>
@@ -121,7 +121,7 @@
   </div>
 
   <script>
-    // Blinking underscore for loading
+    // Setup elements
     const loadingEl = document.getElementById('loading');
     const countdownEl = document.getElementById('countdown');
     const loginEl = document.getElementById('login');
@@ -129,12 +129,13 @@
     const bypassEl = document.getElementById('bypass');
     const terminalInput = document.getElementById('terminalInput');
     const terminalOutput = document.getElementById('terminalOutput');
+    const terminalInputLine = document.getElementById('terminalInputLine');
 
     // Target date: July 4, 2025 12:00:00 EST (UTC-4)
     const targetDate = new Date(Date.UTC(2025, 6, 4, 16, 0, 0));
 
     let countdownInterval;
-    let loadingDuration = 4000; // 4 seconds of loading
+    let loadingDuration = 4000; // 4 seconds loading
 
     // Start with loading screen, then countdown
     setTimeout(() => {
@@ -171,7 +172,8 @@
       countdownEl.style.display = 'none';
       bypassEl.style.display = 'none';
       loginEl.style.display = 'block';
-      initTerminal();
+      terminalInputLine.style.display = 'flex';
+      runSystemBootSequence(initTerminal);
       terminalInput.focus();
     }
 
@@ -187,6 +189,44 @@
       bypassEl.style.display = 'none';
       showLogin();
     });
+
+    // Terminal system boot lines to simulate loading
+    const bootLines = [
+      "blacksun system initializing...",
+      "loading encryption modules [████████████] 100%",
+      "establishing secure connection to server...",
+      "kernel patch applied: stealth-mode v4.3",
+      "memory scan passed",
+      "loading user interface...",
+      "all systems operational.\n"
+    ];
+
+    function typeLine(text, delay = 30) {
+      return new Promise(resolve => {
+        let i = 0;
+        function type() {
+          if(i < text.length) {
+            terminalOutput.textContent += text.charAt(i);
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+            i++;
+            setTimeout(type, delay);
+          } else {
+            terminalOutput.textContent += "\n";
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+            resolve();
+          }
+        }
+        type();
+      });
+    }
+
+    async function runSystemBootSequence(callback) {
+      terminalOutput.textContent = "";
+      for(let line of bootLines) {
+        await typeLine(line);
+      }
+      callback();
+    }
 
     // Terminal challenge prompts
     const prompts = [
@@ -264,7 +304,6 @@
       currentPromptIndex = 0;
       promptNext();
     }
-
   </script>
 
   <style>
