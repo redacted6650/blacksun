@@ -2,93 +2,155 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>blacksun</title>
+  <title>.</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      background-color: black;
-      color: white;
-      font-family: monospace;
+      background: black;
+      color: #00ffcc;
+      font-family: 'Courier New', Courier, monospace;
       height: 100%;
-      display: flex;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .page {
+      display: none;
+      height: 100%;
+      width: 100%;
       justify-content: center;
       align-items: center;
+      flex-direction: column;
+      position: absolute;
+      top: 0;
+      left: 0;
     }
 
-    #countdown, #login, #final {
-      display: none;
-      text-align: center;
+    #countdownPage {
+      font-size: 6em;
+      letter-spacing: 0.2em;
+      animation: staticGlitch 1.2s infinite;
     }
 
-    #countdown {
-      font-size: 3em;
+    @keyframes staticGlitch {
+      0%, 100% { opacity: 1; transform: none; }
+      20% { opacity: 0.85; transform: translate(1px, -1px) rotate(0.3deg); }
+      40% { opacity: 0.6; transform: translate(-1px, 1px) rotate(-0.3deg); }
+      60% { opacity: 1; transform: translate(0, 0) rotate(0.1deg); }
     }
 
     #bypass {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 40px;
-      height: 40px;
-      cursor: pointer;
+      top: 1px;
+      left: 1px;
+      width: 1px;
+      height: 1px;
+      background: #000;
       z-index: 999;
-    }
-
-    #login input[type="password"] {
-      background: black;
-      border: 1px solid white;
-      color: white;
-      padding: 10px;
-      font-size: 1rem;
-    }
-
-    #login button {
-      background: white;
-      color: black;
-      padding: 8px 16px;
-      font-size: 1rem;
-      border: none;
       cursor: pointer;
-      margin-top: 10px;
     }
 
-    img {
+    #loginPage input[type="password"] {
+      background: black;
+      border: none;
+      border-bottom: 1px solid #00ffcc;
+      color: #00ffcc;
+      padding: 5px;
+      font-size: 1.2rem;
+      text-align: center;
+      width: 280px;
+      outline: none;
+      caret-color: #00ffcc;
+      letter-spacing: 0.15em;
+    }
+
+    #loginPage p {
+      font-size: 1rem;
+      letter-spacing: 0.15em;
+      margin-bottom: 10px;
+    }
+
+    #loginPage p::after {
+      content: "_";
+      animation: blink 0.9s infinite step-start;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    #finalPage img {
       max-width: 100%;
-      max-height: 90vh;
+      max-height: 95vh;
+      filter: grayscale(100%) contrast(1.2) blur(0.5px);
+      animation: fadeIn 3s ease-in-out forwards;
+      opacity: 0;
+    }
+
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+        filter: grayscale(0%) contrast(1.05) blur(0px);
+      }
+    }
+
+    .visible {
+      display: flex !important;
     }
   </style>
 </head>
 <body>
+  <!-- Invisible 1px bypass -->
   <div id="bypass" onclick="showLogin()"></div>
 
-  <div id="countdown"></div>
-
-  <div id="login">
-    <p>Enter Password:</p>
-    <input type="password" id="password">
-    <br>
-    <button onclick="checkPassword()">Submit</button>
+  <!-- Countdown -->
+  <div class="page" id="countdownPage">
+    <div id="countdown">??:??:??:??</div>
   </div>
 
-  <div id="final">
-    <img src="https://images.immediate.co.uk/production/volatile/sites/7/2019/12/80.-OPENER_-Founding-Fathers-5a352df.jpg?quality=90&resize=980,654" alt="Founding Fathers">
+  <!-- Terminal-style password prompt -->
+  <div class="page" id="loginPage">
+    <p></p>
+    <input type="password" id="passwordInput" onkeypress="if(event.key==='Enter')checkPassword()">
+  </div>
+
+  <!-- Final "reveal" -->
+  <div class="page" id="finalPage">
+    <img src="https://images.immediate.co.uk/production/volatile/sites/7/2019/12/80.-OPENER_-Founding-Fathers-5a352df.jpg?quality=90&resize=980,654" alt="">
   </div>
 
   <script>
+    const countdownPage = document.getElementById('countdownPage');
+    const loginPage = document.getElementById('loginPage');
+    const finalPage = document.getElementById('finalPage');
+    const countdownEl = document.getElementById('countdown');
     const targetDate = new Date("July 4, 2025 12:00:00 GMT-0400").getTime();
 
-    const countdownEl = document.getElementById('countdown');
-    const loginEl = document.getElementById('login');
-    const finalEl = document.getElementById('final');
+    function showCountdown() {
+      countdownPage.classList.add('visible');
+    }
+
+    function showLogin() {
+      countdownPage.classList.remove('visible');
+      loginPage.classList.add('visible');
+      document.body.style.cursor = 'default';
+      setTimeout(() => document.getElementById("passwordInput").focus(), 300);
+    }
+
+    function showFinal() {
+      loginPage.classList.remove('visible');
+      finalPage.classList.add('visible');
+    }
 
     function updateCountdown() {
       const now = new Date().getTime();
       const distance = targetDate - now;
 
       if (distance <= 0) {
-        countdownEl.style.display = "none";
-        loginEl.style.display = "block";
+        showLogin();
         return;
       }
 
@@ -99,24 +161,19 @@
 
       countdownEl.textContent =
         `${String(days).padStart(2, '0')}:${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-      countdownEl.style.display = "block";
     }
 
     function checkPassword() {
-      const input = document.getElementById("password").value;
-      if (input === "happyindependenceday2025") {
-        loginEl.style.display = "none";
-        finalEl.style.display = "block";
+      const val = document.getElementById('passwordInput').value;
+      if (val === 'happyindependenceday2025') {
+        showFinal();
       } else {
-        alert("Incorrect password.");
+        alert("ACCESS DENIED");
       }
     }
 
-    function showLogin() {
-      countdownEl.style.display = "none";
-      loginEl.style.display = "block";
-    }
-
+    // Launch
+    showCountdown();
     updateCountdown();
     setInterval(updateCountdown, 1000);
   </script>
