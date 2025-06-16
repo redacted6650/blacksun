@@ -5,341 +5,274 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>blacksun</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
   html, body {
-    margin: 0; padding: 0; height: 100%;
+    margin: 0;
+    padding: 0;
+    height: 100%;
     background: black;
-    color: #00ff41;
-    font-family: 'Share Tech Mono', monospace;
-    overflow: hidden;
-    user-select: none;
-  }
-  #bypass {
-    position: fixed;
-    top: 0; left: 0;
-    width: 1px; height: 1px;
-    background: #003300;
-    cursor: crosshair;
-    z-index: 9999;
+    color: #00FF00; /* matrix green */
+    font-family: 'Courier New', Courier, monospace;
+    overflow: hidden; /* no scrollbar */
   }
   #countdown {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    font-size: 7vw;
+    font-size: 6vw;
     font-weight: bold;
-    letter-spacing: 0.2em;
-    color: #00ff41;
-    text-shadow:
-      0 0 5px #00ff41,
-      0 0 10px #00ff41,
-      0 0 20px #00ff41,
-      0 0 40px #00ff41;
+    user-select: none;
   }
-  #bootSequence, #terminal, #finalImage {
+  #bypass {
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    display: none;
-    flex-direction: column;
-    background: black;
-    color: #00ff41;
+    top: 0;
+    left: 0;
+    width: 12px; /* tiny, cursor size */
+    height: 12px;
+    cursor: pointer;
+    opacity: 0.3;
+    mix-blend-mode: difference; /* weird effect to be cryptic */
+    z-index: 1000;
   }
-  #bootSequence {
-    padding: 20px;
-    font-size: 1.1em;
-    white-space: pre-wrap;
+  #login, #final {
+    display: none;
+    height: 100vh;
+    background: black;
+    color: #00FF00;
+    font-family: 'Courier New', Courier, monospace;
     overflow: hidden;
   }
+  #login form {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  #login input {
+    background: black;
+    border: 1px solid #00FF00;
+    color: #00FF00;
+    font-family: monospace;
+    font-size: 1.5em;
+    padding: 10px;
+    width: 350px;
+  }
+  #login input:focus {
+    outline: none;
+    border-color: #0f0;
+  }
+  #final img {
+    display: block;
+    margin: 0 auto;
+    max-width: 98vw;
+    max-height: 98vh;
+  }
+  /* Terminal styles */
   #terminal {
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
     padding: 10px 20px;
     font-weight: bold;
+    height: 100vh;
+    box-sizing: border-box;
+    white-space: pre-wrap;
   }
   #terminalOutput {
     flex-grow: 1;
     overflow-y: auto;
     line-height: 1.2em;
+    margin-bottom: 10px;
   }
   #terminalInputLine {
     display: flex;
     align-items: center;
     font-weight: bold;
+    margin-bottom: 10px; /* <-- moved input line slightly up */
   }
-  #prompt {
-    user-select: none;
-    margin-right: 6px;
-    font-weight: bolder;
-    font-size: 1.4em;
-    line-height: 1em;
+  #terminalPrompt {
+    margin-right: 10px;
   }
   #terminalInput {
     background: black;
     border: none;
-    outline: none;
-    color: #00ff41;
-    font-family: 'Share Tech Mono', monospace;
+    color: #00FF00;
+    font-family: monospace;
     font-weight: bold;
-    font-size: 1.2em;
+    font-size: 1em;
     flex-grow: 1;
   }
-  #terminalInput::selection {
-    background: #004400;
-  }
-  #finalImage img {
-    width: 100vw;
-    height: 100vh;
-    object-fit: cover;
-    user-select: none;
-  }
-  /* Blinking cursor */
-  @keyframes blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0; }
-  }
-  #prompt::after {
-    content: ' ';
-    display: inline-block;
-    width: 10px;
-    background: #00ff41;
-    margin-left: 4px;
-    animation: blink 1s steps(2, start) infinite;
+  #terminalInput:focus {
+    outline: none;
   }
 </style>
 </head>
 <body>
 
-<div id="bypass" title="???"></div>
+<div id="bypass" title="Click here to bypass countdown"></div>
 
 <div id="countdown" aria-live="polite" aria-atomic="true"></div>
 
-<div id="bootSequence" aria-live="polite" aria-atomic="true" aria-relevant="additions"></div>
-
-<div id="terminal" role="region" aria-label="Cryptic terminal interface" aria-live="polite">
-  <div id="terminalOutput" tabindex="0" aria-live="polite" aria-atomic="false"></div>
-  <div id="terminalInputLine">
-    <span id="prompt">&gt;</span>
-    <input id="terminalInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Terminal input" />
+<div id="login">
+  <div id="terminal">
+    <div id="terminalOutput"></div>
+    <div id="terminalInputLine">
+      <div id="terminalPrompt">&gt;</div>
+      <input id="terminalInput" autocomplete="off" spellcheck="false" autofocus />
+    </div>
   </div>
 </div>
 
-<div id="finalImage" role="img" aria-label="Founding Fathers painting">
-  <img src="https://images.immediate.co.uk/production/volatile/sites/7/2019/12/80.-OPENER_-Founding-Fathers-5a352df.jpg?quality=90&resize=980,654" alt="Founding Fathers Painting" />
+<div id="final">
+  <img src="https://images.immediate.co.uk/production/volatile/sites/7/2019/12/80.-OPENER_-Founding-Fathers-5a352df.jpg?quality=90&resize=980,654" alt="Founding Fathers" />
 </div>
 
 <script>
-(() => {
+  // Countdown to July 4th, noon EST (UTC-4)
   const countdownEl = document.getElementById('countdown');
-  const bootEl = document.getElementById('bootSequence');
-  const terminalEl = document.getElementById('terminal');
-  const terminalOutput = document.getElementById('terminalOutput');
+  const loginEl = document.getElementById('login');
+  const finalEl = document.getElementById('final');
+  const bypassEl = document.getElementById('bypass');
   const terminalInput = document.getElementById('terminalInput');
-  const finalImage = document.getElementById('finalImage');
-  const bypass = document.getElementById('bypass');
+  const terminalOutput = document.getElementById('terminalOutput');
 
-  // Target date July 4, 2025, 12:00:00 PM EST (UTC-4)
-  // JS Date works with UTC time, so set UTC equivalent:
-  // EST is UTC-4 (during July daylight time)
-  // So July 4 12:00 EST = July 4 16:00 UTC
-  const targetDate = new Date(Date.UTC(2025,6-1,4,16,0,0)); // Month is zero-based: 6-1=5 for June, 6 for July
-
-  // Actually July is month 6 zero-based
-  // Fix: July is month 6 zero-based = 6
-  // So months: 0=Jan, ..., 6=July
-  // So July 4 is month 6
-  // Correct date with 6:
-  // Actually, Date.UTC(2025,6,4,16,0,0) = July 4, 2025 16:00 UTC
-  // So update to 6, not 5
-  const correctedTargetDate = new Date(Date.UTC(2025,6,4,16,0,0));
-
-  // We'll use correctedTargetDate
-  const target = correctedTargetDate;
-
-  // Format countdown as DD:HH:MM:SS
-  function updateCountdown() {
-    const now = new Date();
-    let diff = target - now;
-    if (diff < 0) diff = 0;
-
-    const seconds = Math.floor(diff / 1000) % 60;
-    const minutes = Math.floor(diff / (1000*60)) % 60;
-    const hours = Math.floor(diff / (1000*60*60)) % 24;
-    const days = Math.floor(diff / (1000*60*60*24));
-
-    const pad = (n) => n.toString().padStart(2,'0');
-
-    return `${pad(days)}:${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-  }
+  // Target date: July 4, 2025 12:00:00 EST (UTC-4)
+  const targetDate = new Date(Date.UTC(2025, 6, 4, 16, 0, 0)); // 12pm EST = 16:00 UTC
 
   let countdownInterval;
 
-  // === Countdown screen ===
-  function showCountdown() {
-    countdownEl.style.display = 'flex';
-    bootEl.style.display = 'none';
-    terminalEl.style.display = 'none';
-    finalImage.style.display = 'none';
-  }
-
-  function hideCountdown() {
-    countdownEl.style.display = 'none';
-  }
-
-  // === Boot sequence ===
-  const bootLines = [
-    "[SYSTEM] Initializing BLACKSUN Secure Protocol...",
-    "[SYSTEM] Loading encrypted cipher modules...",
-    "[SYSTEM] Verifying user clearance level...",
-    "[SYSTEM] Establishing quantum tunneling connection...",
-    "[SYSTEM] Authenticating matrix integrity...",
-    "[SYSTEM] Finalizing system lockdown...",
-    "[SYSTEM] Access terminal ready.",
-  ];
-
-  // Show boot sequence line by line with delay
-  async function runBootSequence() {
-    bootEl.textContent = "";
-    bootEl.style.display = 'flex';
-    let delay = 2000;
-    for (const line of bootLines) {
-      await new Promise(r => setTimeout(r, delay));
-      bootEl.textContent += line + "\n";
-      delay = 1200 + Math.random()*800;
-      bootEl.scrollTop = bootEl.scrollHeight;
+  function updateCountdown() {
+    const now = new Date();
+    let diff = targetDate - now;
+    if(diff <= 0) {
+      clearInterval(countdownInterval);
+      showLogin();
+      return;
     }
-    await new Promise(r => setTimeout(r, 1500));
-    bootEl.style.display = 'none';
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    diff -= days * (1000 * 60 * 60 * 24);
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    diff -= hours * (1000 * 60 * 60);
+    const minutes = Math.floor(diff / (1000 * 60));
+    diff -= minutes * (1000 * 60);
+    const seconds = Math.floor(diff / 1000);
+    countdownEl.textContent =
+      `${days.toString().padStart(2,'0')}:${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
   }
 
-  // === Terminal puzzles ===
-  const puzzles = [
+  function showLogin() {
+    countdownEl.style.display = 'none';
+    bypassEl.style.display = 'none';
+    loginEl.style.display = 'block';
+    terminalInput.focus();
+  }
+
+  function showFinal() {
+    loginEl.style.display = 'none';
+    finalEl.style.display = 'block';
+  }
+
+  // Bypass must be clicked exactly on tiny 12x12 px area in top-left
+  bypassEl.addEventListener('click', () => {
+    showLogin();
+  });
+
+  countdownInterval = setInterval(updateCountdown, 1000);
+  updateCountdown();
+
+  // Terminal implementation
+  const prompts = [
     {
-      prompt: 'Input hex code to set A=0x1F',
-      validator: (input) => /^a\s*=\s*0x1f$/i.test(input.trim()),
-      failMessage: 'ERROR 0x4F3: INVALID ASSIGNMENT',
+      question: "Input hex code to set A=0x1F",
+      validate: input => /^A\s*=\s*0x1F$/i.test(input.trim()),
+      success: "A set to 0x1F"
     },
     {
-      prompt: 'Add decimal 45 to A. Use syntax: A= A + 45',
-      validator: (input) => /^a\s*=\s*a\s*\+\s*45$/i.test(input.trim()),
-      failMessage: 'ERROR 0xA12: SYNTAX VIOLATION',
+      question: "Add decimal 45 to A. Use syntax: A= A + 45",
+      validate: input => /^A\s*=\s*A\s*\+\s*45$/i.test(input.trim()),
+      success: "Added 45 to A"
     },
     {
-      prompt: 'Convert 76 to binary (enter binary only)',
-      validator: (input) => /^0b?1001100$/i.test(input.trim()),
-      failMessage: 'ERROR 0xDE1: INVALID BINARY',
+      question: "Convert 76 to binary (enter binary only)",
+      validate: input => /^(0b)?1001100$/i.test(input.trim()),
+      success: "Binary accepted"
     },
     {
-      prompt: 'Decode base64 string: "c2VjcmV0X3Bhc3M="',
-      validator: (input) => /^secret_pass$/i.test(input.trim()),
-      failMessage: 'ERROR 0xBEE: DECODE FAILURE',
+      question: 'Decode base64 string: "c2VjcmV0X3Bhc3M="',
+      validate: input => /^secret_pass$/i.test(input.trim()),
+      success: "Base64 decoded"
     },
     {
-      prompt: 'Execute secret command: "echo $BLACKSUN"',
-      validator: (input) => /^echo\s+\$BLACKSUN$/i.test(input.trim()),
-      failMessage: 'ERROR 0x1337: COMMAND NOT FOUND',
+      question: 'Execute secret command: "echo $BLACKSUN"',
+      validate: input => /^echo\s+\$BLACKSUN$/i.test(input.trim()),
+      success: "Command executed"
     },
     {
-      prompt: 'Enter passphrase (sha256 hex):',
-      validator: (input) => /^[a-f0-9]{64}$/.test(input.trim()),
-      failMessage: 'ERROR 0xC0DE: INVALID HASH',
+      question: "Enter passphrase (sha256 hex):",
+      validate: input => /^[a-f0-9]{64}$/i.test(input.trim()),
+      success: "Passphrase accepted"
     },
     {
-      prompt: 'Calculate hash of "freedom" (sha256 hex):',
-      validator: (input) => input.trim().toLowerCase() === "5e5e4f2f8580db8d3a1921c14710c4f2d9b8e6f38a2f1dbef860db6e04f4f377",
-      failMessage: 'ERROR 0xBADD: HASH MISMATCH',
-    },
+      question: 'Calculate hash of "freedom" (sha256 hex):',
+      validate: input => input.trim().toLowerCase() === "5e5e4f2f8580db8d3a1921c14710c4f2d9b8e6f38a2f1dbef860db6e04f4f377",
+      success: "Hash correct. Access granted."
+    }
   ];
 
-  let puzzleIndex = 0;
+  let currentPromptIndex = 0;
 
-  function addTerminalLine(text, isError = false) {
-    const line = document.createElement('div');
-    line.textContent = text;
-    if (isError) line.style.color = '#ff0033';
-    terminalOutput.appendChild(line);
+  function printLine(text) {
+    terminalOutput.textContent += text + "\n";
     terminalOutput.scrollTop = terminalOutput.scrollHeight;
   }
 
-  function clearTerminal() {
-    terminalOutput.textContent = '';
+  function promptNext() {
+    if(currentPromptIndex >= prompts.length) {
+      printLine("\n\nRedirecting...\n");
+      setTimeout(showFinal, 1500);
+      return;
+    }
+    printLine(prompts[currentPromptIndex].question);
   }
 
-  async function startTerminal() {
-    terminalEl.style.display = 'flex';
-    terminalInput.value = '';
-    puzzleIndex = 0;
-    clearTerminal();
-    addTerminalLine(puzzles[0].prompt);
-    terminalInput.focus();
-  }
-
-  async function terminalInputHandler(e) {
-    if (e.key !== 'Enter') return;
-
-    const input = terminalInput.value.trim();
-    if (!input) return;
-    addTerminalLine('> ' + input);
-    terminalInput.value = '';
-
-    const puzzle = puzzles[puzzleIndex];
-
-    if (puzzle.validator(input)) {
-      puzzleIndex++;
-      if (puzzleIndex === puzzles.length) {
-        // Success! Show final image
-        addTerminalLine("ACCESS GRANTED. Loading secure file...");
-        await new Promise(r => setTimeout(r, 1200));
-        terminalEl.style.display = 'none';
-        showFinalImage();
-        return;
+  terminalInput.addEventListener('keydown', e => {
+    if(e.key === 'Enter') {
+      const input = terminalInput.value.trim();
+      if(input === '') return;
+      printLine("> " + input);
+      if(prompts[currentPromptIndex].validate(input)) {
+        printLine(prompts[currentPromptIndex].success + "\n");
+        currentPromptIndex++;
+        promptNext();
+      } else {
+        printLine("Invalid input. Try again.\n");
       }
-      // Next puzzle prompt
-      addTerminalLine('');
-      addTerminalLine(puzzles[puzzleIndex].prompt);
-    } else {
-      addTerminalLine(puzzle.failMessage, true);
+      terminalInput.value = '';
     }
-  }
-
-  function showFinalImage() {
-    finalImage.style.display = 'block';
-  }
-
-  // Initial setup
-  showCountdown();
-
-  function tick() {
-    countdownEl.textContent = updateCountdown();
-    if (target - new Date() <= 0) {
-      clearInterval(countdownInterval);
-      countdownEl.style.display = 'none';
-      bootAndTerminal();
-    }
-  }
-
-  countdownInterval = setInterval(tick, 1000);
-  tick();
-
-  bypass.addEventListener('click', () => {
-    clearInterval(countdownInterval);
-    countdownEl.style.display = 'none';
-    bootAndTerminal();
   });
 
-  async function bootAndTerminal() {
-    await runBootSequence();
-    startTerminal();
+  // Initialize terminal when login is shown
+  function initTerminal() {
+    terminalOutput.textContent = '';
+    currentPromptIndex = 0;
+    promptNext();
   }
 
-  terminalInput.addEventListener('keydown', terminalInputHandler);
-
-  // Accessibility: focus input if terminal visible
-  terminalEl.addEventListener('click', () => {
+  // Focus input and init terminal if login visible on page load (e.g., bypass)
+  if(loginEl.style.display === 'block') {
+    initTerminal();
     terminalInput.focus();
+  }
+
+  // When login shows, init terminal & focus
+  const observer = new MutationObserver(() => {
+    if(loginEl.style.display === 'block') {
+      initTerminal();
+      terminalInput.focus();
+    }
   });
-})();
+  observer.observe(loginEl, { attributes: true, attributeFilter: ['style'] });
 </script>
+
 </body>
 </html>
