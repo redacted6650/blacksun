@@ -7,111 +7,182 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
+    /* Basic Reset */
     html, body {
       margin: 0; padding: 0;
       height: 100vh;
       background: black;
-      color: white;
+      color: #00ff00;
       font-family: 'Share Tech Mono', monospace;
+      font-weight: 700;
       overflow: hidden;
       user-select: none;
+      position: relative;
+    }
+
+    /* Subtle flickering green noise background */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      background:
+        repeating-radial-gradient(circle, #003300 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(45deg, #003300 0 1px, transparent 1px 3px);
+      opacity: 0.04;
+      animation: flickerBG 3s infinite alternate;
+      z-index: 0;
+    }
+    @keyframes flickerBG {
+      0% { opacity: 0.03; }
+      50% { opacity: 0.05; }
+      100% { opacity: 0.03; }
     }
 
     #countdown {
-      font-size: 6vw;
+      font-size: 8vw;
       font-weight: 700;
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      letter-spacing: 0.2em;
+      letter-spacing: 0.35em;
       user-select: none;
       cursor: default;
+      color: #00ff00;
+      text-shadow:
+        0 0 5px #00ff00,
+        0 0 10px #00ff00,
+        0 0 20px #00ff00,
+        0 0 40px #00ff00;
+      z-index: 10;
     }
 
-    /* Tiny bypass pixel in top-left */
+    /* Tiny bypass pixel top-left, almost invisible */
     #bypass {
       position: absolute;
-      top: 5px;
-      left: 5px;
-      width: 12px;
-      height: 12px;
-      /* Invisible but still clickable */
-      opacity: 0;
+      top: 2px;
+      left: 2px;
+      width: 8px;
+      height: 8px;
+      opacity: 0.02;
       cursor: crosshair;
       user-select: none;
-      z-index: 1000;
+      z-index: 10000;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #00ff00;
+      filter: drop-shadow(0 0 2px #00ff00);
+    }
+    #bypass:hover {
+      opacity: 0.08;
     }
 
     #terminal-container {
       display: none;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 35vh;
-      background: #000;
-      border-top: 2px solid white;
       box-sizing: border-box;
-      padding: 10px 20px;
-      overflow-y: auto;
-      color: white;
-      font-size: 1.1rem;
-      line-height: 1.4;
+      padding: 15px 20px;
+      height: 100vh;
+      width: 100vw;
+      background: black;
+      color: #00ff00;
+      font-family: 'Share Tech Mono', monospace;
+      font-weight: 700;
+      overflow: hidden;
+      white-space: pre-wrap;
+      line-height: 1.3;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      position: relative;
+      z-index: 20;
+      text-shadow:
+        0 0 10px #00ff00,
+        0 0 20px #00ff00,
+        0 0 30px #00ff00;
+      user-select: text;
     }
 
     #terminal-output {
+      flex-grow: 1;
+      overflow: hidden;
       white-space: pre-wrap;
-      max-height: 85%;
-      overflow-y: auto;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
+      font-weight: 700;
     }
 
     #input-line {
       display: flex;
       align-items: center;
+      font-weight: 700;
+      font-size: 1.4rem;
     }
 
     #prompt {
       user-select: none;
-      margin-right: 8px;
+      margin-right: 10px;
       font-weight: 700;
+      font-size: 1.4rem;
+      color: #00ff00;
+      filter: drop-shadow(0 0 5px #00ff00);
     }
 
     #terminal-input {
       background: transparent;
       border: none;
       outline: none;
-      color: white;
+      color: #00ff00;
       font-family: 'Share Tech Mono', monospace;
-      font-size: 1.1rem;
+      font-weight: 700;
+      font-size: 1.4rem;
       flex-grow: 1;
-      caret-color: white;
+      caret-color: #00ff00;
+      text-shadow:
+        0 0 5px #00ff00,
+        0 0 10px #00ff00;
     }
 
-    /* Blinking cursor for input */
     #terminal-input::placeholder {
-      color: #555;
+      color: #003300;
     }
 
-    /* Scrollbar for terminal output */
-    #terminal-container::-webkit-scrollbar {
-      width: 6px;
+    /* Blinking cursor effect */
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      50.01%, 100% { opacity: 0; }
     }
-    #terminal-container::-webkit-scrollbar-track {
-      background: #222;
+    #terminal-input {
+      animation: blink 1.2s steps(1) infinite;
     }
-    #terminal-container::-webkit-scrollbar-thumb {
-      background: #555;
+
+    /* Glitch flicker effect for output lines */
+    .glitch {
+      animation: glitchFlicker 1.5s infinite;
     }
+    @keyframes glitchFlicker {
+      0%, 20%, 40%, 60%, 80%, 100% {
+        opacity: 1;
+        text-shadow:
+          0 0 5px #00ff00,
+          0 0 10px #00ff00,
+          0 0 20px #00ff00;
+      }
+      10%, 30%, 50%, 70%, 90% {
+        opacity: 0.6;
+        text-shadow:
+          0 0 3px #003300,
+          0 0 6px #003300;
+      }
+    }
+
   </style>
 </head>
 <body>
-  <div id="countdown"></div>
+  <div id="countdown" aria-label="Countdown timer"></div>
   <div id="bypass" title="???"></div>
 
-  <div id="terminal-container" tabindex="0" aria-label="Terminal window">
-    <div id="terminal-output"></div>
+  <div id="terminal-container" tabindex="0" aria-label="Blacksite terminal">
+    <div id="terminal-output" aria-live="polite" aria-atomic="false" aria-relevant="additions"></div>
     <div id="input-line">
       <div id="prompt">&gt;</div>
       <input type="text" id="terminal-input" autocomplete="off" spellcheck="false" autofocus />
@@ -120,33 +191,48 @@
 
 <script>
 (() => {
-  // ====== Countdown to July 4, 2025 12:00:00 PM EST (UTC-4) ======
   const countdownEl = document.getElementById('countdown');
   const bypassEl = document.getElementById('bypass');
   const terminalContainer = document.getElementById('terminal-container');
   const terminalOutput = document.getElementById('terminal-output');
   const terminalInput = document.getElementById('terminal-input');
 
-  // Target date/time UTC (July 4 2025 16:00 UTC == 12:00 EST UTC-4)
-  const targetDate = new Date(Date.UTC(2025, 6 - 1, 4, 16, 0, 0)); // June is 5, July is 6 (month 0-based)
+  // Sound effects
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-  // Actually July is month 6 (zero-based index 6 = July)
-  // Correction: months zero-indexed: July=6 so Date.UTC(2025, 6, 4, 16, 0, 0)
-  // So fix above:
-  const correctedTargetDate = new Date(Date.UTC(2025, 6, 4, 16, 0, 0)); // July 4 2025 16:00 UTC (12pm EST)
+  function playBeep(freq=440, duration=50, vol=0.2) {
+    const osc = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    osc.frequency.value = freq;
+    gainNode.gain.value = vol;
+    osc.start();
+    setTimeout(() => {
+      osc.stop();
+    }, duration);
+  }
+  function playErrorBeep() {
+    playBeep(100, 150, 0.3);
+  }
+  function playTypeBeep() {
+    playBeep(800, 30, 0.07);
+  }
 
-  // Helper: pad number to 2 digits
+  // Countdown target date/time UTC (July 4, 2025 12:00 EST == 16:00 UTC)
+  const targetDate = new Date(Date.UTC(2025, 6, 4, 16, 0, 0)); 
+
   function pad2(num) {
     return (num < 10 ? '0' : '') + num;
   }
 
-  // Calculate remaining time
   function updateCountdown() {
     const now = new Date();
-    const diff = correctedTargetDate - now;
+    const diff = targetDate - now;
     if (diff <= 0) {
       countdownEl.style.display = 'none';
-      startTerminal();
+      startBootSequence();
+      clearInterval(intervalId);
       return;
     }
     const days = Math.floor(diff / (1000*60*60*24));
@@ -157,67 +243,128 @@
     countdownEl.textContent = `${pad2(days)}:${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`;
   }
 
-  // Tiny bypass area — clicking it instantly shows terminal
   bypassEl.addEventListener('click', e => {
     e.stopPropagation();
     countdownEl.style.display = 'none';
-    startTerminal();
+    startBootSequence();
   });
 
-  // Terminal hard-coded puzzles (make harder for coders)
+  // Puzzle chain
   const puzzles = [
     {
-      prompt: 'Init: set x to 7',
-      validator: input => /^x\s*=\s*7\s*;?$/.test(input.trim()),
-      success: 'x=7 set.',
+      prompt: 'Input hex code to set A=0x1F',
+      validator: input => /^A\s*=\s*0x1F$/i.test(input.trim()),
+      success: 'OK. A=31',
     },
     {
-      prompt: 'Update: increment x by 10',
-      validator: input => /^(x\s*=\s*x\s*\+\s*10|x\s*\+=\s*10)\s*;?$/.test(input.trim()),
-      success: 'x incremented.',
+      prompt: 'Add decimal 45 to A. Use syntax: A= A + 45',
+      validator: input => /^A\s*=\s*A\s*\+\s*45$/i.test(input.trim()),
+      success: 'Updated. A=76',
     },
     {
-      prompt: 'Calc: what is the value of x?',
-      validator: input => /^17$/.test(input.trim()),
-      success: 'Correct.',
+      prompt: 'Convert 76 to binary (enter binary only)',
+      validator: input => /^(1001100|0b1001100)$/i.test(input.trim()),
+      success: 'Correct. Binary confirmed.',
     },
     {
-      prompt: 'Logic gate: true AND false equals?',
-      validator: input => /^(false|0)$/i.test(input.trim()),
-      success: 'Correct.',
+      prompt: 'Decode base64 string: "c2VjcmV0X3Bhc3M="',
+      validator: input => /^secret_pass$/i.test(input.trim()),
+      success: 'Decoded to "secret_pass"',
     },
     {
-      prompt: 'Secret cmd (type exactly): sudo open sesame',
-      validator: input => /^sudo open sesame$/i.test(input.trim()),
-      success: 'Access granted.',
+      prompt: 'Execute secret command: "echo $BLACKSUN"',
+      validator: input => /^echo\s+\$BLACKSUN$/i.test(input.trim()),
+      success: 'BLACKSUN=OPEN',
+    },
+    {
+      prompt: 'Enter passphrase (sha256 hex):',
+      validator: input => /^[a-f0-9]{64}$/i.test(input.trim()),
+      success: 'Passphrase accepted.',
+    },
+    {
+      prompt: 'Calculate hash of "freedom" (sha256 hex):',
+      validator: input => input.trim().toLowerCase() === '5e5e4f2f8580db8d3a1921c14710c4f2d9b8e6f38a2f1dbef860db6e04f4f377',
+      success: 'Hash verified.',
       final: true,
     }
   ];
 
   let currentPuzzle = 0;
 
-  function appendOutput(text, isError) {
-    terminalOutput.textContent += text + '\n';
+  function glitchText(text) {
+    // Returns text with some random glitch flicker classes (simulate flicker)
+    return text.split('').map(c => {
+      if (Math.random() < 0.05) {
+        return `<span class="glitch">${c}</span>`;
+      }
+      return c;
+    }).join('');
+  }
+
+  function appendOutput(text, isError=false) {
+    const sanitized = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const finalText = glitchText(sanitized);
+    const div = document.createElement('div');
+    div.innerHTML = finalText;
     if (isError) {
-      terminalOutput.style.color = 'red';
-      setTimeout(() => { terminalOutput.style.color = 'white'; }, 500);
+      div.style.color = '#ff0000';
+      setTimeout(() => {
+        div.style.color = '#00ff00';
+      }, 800);
+      playErrorBeep();
+    } else {
+      playTypeBeep();
     }
-    terminalContainer.scrollTop = terminalContainer.scrollHeight;
+    terminalOutput.appendChild(div);
+    // Maintain max lines to avoid overflow
+    while (terminalOutput.childNodes.length > 40) {
+      terminalOutput.removeChild(terminalOutput.firstChild);
+    }
   }
 
   function showPrompt() {
-    appendOutput(`\n${puzzles[currentPuzzle].prompt}`);
+    appendOutput('\n' + puzzles[currentPuzzle].prompt);
   }
 
-  function startTerminal() {
-    terminalContainer.style.display = 'block';
+  function startBootSequence() {
+    countdownEl.style.display = 'none';
+    terminalContainer.style.display = 'flex';
+    terminalInput.value = '';
     terminalInput.focus();
-    appendOutput('Welcome to blacksun terminal\n');
-    showPrompt();
+    currentPuzzle = 0;
+    terminalOutput.textContent = '';
+
+    // Fake boot text lines
+    const bootLines = [
+      'BOOTING BLACKSUN SYSTEM...',
+      'INITIALIZING SECURE MODULES...',
+      'CHECKING MEMORY ........ OK',
+      'LOADING ENCRYPTION KEYS ... OK',
+      'ESTABLISHING SECURE CONNECTIONS .. OK',
+      'FINALIZING...',
+      'ACCESS RESTRICTED. AUTH REQUIRED.'
+    ];
+
+    let i = 0;
+    function printBoot() {
+      if(i >= bootLines.length){
+        setTimeout(() => {
+          appendOutput('\n');
+          showPrompt();
+          terminalInput.disabled = false;
+          terminalInput.focus();
+        }, 500);
+        return;
+      }
+      appendOutput(bootLines[i]);
+      i++;
+      setTimeout(printBoot, 650 + Math.random()*300);
+    }
+    terminalInput.disabled = true;
+    printBoot();
   }
 
   function endTerminal() {
-    // Clear all and show final image fullscreen
     document.body.innerHTML = '';
     const img = document.createElement('img');
     img.src = 'https://images.immediate.co.uk/production/volatile/sites/7/2019/12/80.-OPENER_-Founding-Fathers-5a352df.jpg?quality=90&resize=980,654';
@@ -237,26 +384,49 @@
       const val = terminalInput.value.trim();
       if(!val) return;
 
-      appendOutput(`> ${val}`);
+      appendOutput('> ' + val);
+      terminalInput.value = '';
 
-      if(puzzles[currentPuzzle].validator(val)){
+      const valid = puzzles[currentPuzzle].validator(val);
+      if(valid){
         appendOutput(puzzles[currentPuzzle].success);
         if(puzzles[currentPuzzle].final){
-          endTerminal();
+          setTimeout(endTerminal, 700);
           return;
         }
         currentPuzzle++;
-        showPrompt();
+        setTimeout(showPrompt, 400);
       } else {
-        appendOutput('Error: invalid input. Try again.', true);
+        const fakeErrors = [
+          'ERROR 0x4F3: ACCESS DENIED',
+          'ERROR 0x5B1: SYNTAX ERROR',
+          'ERROR 0xA12: SEGFAULT',
+          'ERROR 0xC23: COMMAND NOT RECOGNIZED',
+          'ERROR 0x7D9: PERMISSION DENIED',
+          'ERROR 0x1A0: INVALID OPERATION',
+          'ERROR 0x2F6: UNKNOWN TOKEN',
+          'ERROR 0xBAD: CHECKSUM FAILURE',
+          'ERROR 0xE13: ILLEGAL INSTRUCTION',
+          'ERROR 0xF00D: MEMORY VIOLATION'
+        ];
+        const randomError = fakeErrors[Math.floor(Math.random() * fakeErrors.length)];
+        appendOutput(randomError, true);
       }
-      terminalInput.value = '';
     }
   });
 
-  // Initialize countdown update every second
+  // Tiny input beep on every keypress
+  terminalInput.addEventListener('keypress', e => {
+    playTypeBeep();
+  });
+
   updateCountdown();
   const intervalId = setInterval(updateCountdown, 1000);
+
+  // Console hidden hint
+  console.log('%c WARNING: UNAUTHORIZED ACCESS PROHIBITED. ', 'background: black; color: #00ff00; font-weight: 700; font-family: monospace; font-size: 20px; padding: 10px; text-shadow: 0 0 10px #00ff00;');
+  console.log('%c Tip: The bypass is hidden as a tiny green pixel in the top-left corner.', 'color: #005500; font-family: monospace; font-size: 14px;');
+  console.log('%c Puzzle Hint: Use coding syntax exactly, watch case and spaces.', 'color: #005500; font-family: monospace; font-size: 14px;');
 })();
 </script>
 </body>
