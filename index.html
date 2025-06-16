@@ -1,181 +1,191 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>.</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: black;
-      color: #00ffcc;
-      font-family: 'Courier New', Courier, monospace;
-      height: 100%;
-      overflow: hidden;
-      user-select: none;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>blacksun</title>
+<style>
+  /* Base styles */
+  html, body {
+    margin: 0; padding: 0;
+    background: black;
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    height: 100vh;
+    overflow: hidden;
+  }
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  #terminal {
+    background: #000;
+    border: 2px solid #00ff00;
+    width: 90vw;
+    max-width: 800px;
+    height: 70vh;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    user-select: none;
+  }
 
-    .page {
-      display: none;
-      height: 100%;
-      width: 100%;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
+  #output {
+    white-space: pre-wrap;
+    line-height: 1.3;
+  }
 
-    #countdownPage {
-      font-size: 6em;
-      letter-spacing: 0.2em;
-      animation: staticGlitch 1.2s infinite;
-    }
+  #inputLine {
+    display: flex;
+  }
 
-    @keyframes staticGlitch {
-      0%, 100% { opacity: 1; transform: none; }
-      20% { opacity: 0.85; transform: translate(1px, -1px) rotate(0.3deg); }
-      40% { opacity: 0.6; transform: translate(-1px, 1px) rotate(-0.3deg); }
-      60% { opacity: 1; transform: translate(0, 0) rotate(0.1deg); }
-    }
+  #prompt {
+    flex-shrink: 0;
+    margin-right: 5px;
+  }
 
-    #bypass {
-      position: absolute;
-      top: 1px;
-      left: 1px;
-      width: 1px;
-      height: 1px;
-      background: #000;
-      z-index: 999;
-      cursor: pointer;
-    }
+  #cmdInput {
+    flex-grow: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #00ff00;
+    font-family: monospace;
+    font-size: 1rem;
+  }
 
-    #loginPage input[type="password"] {
-      background: black;
-      border: none;
-      border-bottom: 1px solid #00ffcc;
-      color: #00ffcc;
-      padding: 5px;
-      font-size: 1.2rem;
-      text-align: center;
-      width: 280px;
-      outline: none;
-      caret-color: #00ffcc;
-      letter-spacing: 0.15em;
-    }
-
-    #loginPage p {
-      font-size: 1rem;
-      letter-spacing: 0.15em;
-      margin-bottom: 10px;
-    }
-
-    #loginPage p::after {
-      content: "_";
-      animation: blink 0.9s infinite step-start;
-    }
-
-    @keyframes blink {
-      50% {
-        opacity: 0;
-      }
-    }
-
-    #finalPage img {
-      max-width: 100%;
-      max-height: 95vh;
-      filter: grayscale(100%) contrast(1.2) blur(0.5px);
-      animation: fadeIn 3s ease-in-out forwards;
-      opacity: 0;
-    }
-
-    @keyframes fadeIn {
-      to {
-        opacity: 1;
-        filter: grayscale(0%) contrast(1.05) blur(0px);
-      }
-    }
-
-    .visible {
-      display: flex !important;
-    }
-  </style>
+  /* Blinking cursor */
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+  #cmdInput::after {
+    content: '_';
+    animation: blink 1s step-start infinite;
+  }
+</style>
 </head>
 <body>
-  <!-- Invisible 1px bypass -->
-  <div id="bypass" onclick="showLogin()"></div>
-
-  <!-- Countdown -->
-  <div class="page" id="countdownPage">
-    <div id="countdown">??:??:??:??</div>
+<div id="terminal" tabindex="0" aria-label="Terminal interface">
+  <div id="output"></div>
+  <div id="inputLine">
+    <div id="prompt">&gt;</div>
+    <input type="text" id="cmdInput" autocomplete="off" autofocus spellcheck="false" />
   </div>
+</div>
 
-  <!-- Terminal-style password prompt -->
-  <div class="page" id="loginPage">
-    <p></p>
-    <input type="password" id="passwordInput" onkeypress="if(event.key==='Enter')checkPassword()">
-  </div>
+<script>
+(() => {
+  const terminal = document.getElementById('terminal');
+  const output = document.getElementById('output');
+  const input = document.getElementById('cmdInput');
 
-  <!-- Final "reveal" -->
-  <div class="page" id="finalPage">
-    <img src="https://images.immediate.co.uk/production/volatile/sites/7/2019/12/80.-OPENER_-Founding-Fathers-5a352df.jpg?quality=90&resize=980,654" alt="">
-  </div>
+  // Hide blinking cursor on input to avoid confusion
+  input.style.caretColor = '#00ff00';
 
-  <script>
-    const countdownPage = document.getElementById('countdownPage');
-    const loginPage = document.getElementById('loginPage');
-    const finalPage = document.getElementById('finalPage');
-    const countdownEl = document.getElementById('countdown');
-    const targetDate = new Date("July 4, 2025 12:00:00 GMT-0400").getTime();
-
-    function showCountdown() {
-      countdownPage.classList.add('visible');
+  // Terminal state and prompts
+  const steps = [
+    {
+      prompt: 'Define a variable named "flag" and assign it the number 1',
+      validator: input => {
+        // Accept e.g. flag=1 or flag = 1
+        return /^\s*flag\s*=\s*1\s*;?\s*$/.test(input.toLowerCase());
+      },
+      success: 'Variable "flag" set. Proceeding...',
+    },
+    {
+      prompt: 'Increment the variable "flag" by 4',
+      validator: input => {
+        // Accept: flag=flag+4 or flag+=4
+        return /^\s*flag\s*=\s*flag\s*\+\s*4\s*;?\s*$/.test(input.toLowerCase()) ||
+               /^\s*flag\s*\+=\s*4\s*;?\s*$/.test(input.toLowerCase());
+      },
+      success: 'flag incremented. Next step...',
+    },
+    {
+      prompt: 'What is the value of "flag"? (Just enter the number)',
+      validator: input => {
+        return input.trim() === '5';
+      },
+      success: 'Correct. Preparing final step...',
+    },
+    {
+      prompt: 'Enter the secret command to unlock the final screen: type "open sesame"',
+      validator: input => {
+        return input.trim().toLowerCase() === 'open sesame';
+      },
+      success: 'Access granted. Loading...',
+      finalStep: true
     }
+  ];
 
-    function showLogin() {
-      countdownPage.classList.remove('visible');
-      loginPage.classList.add('visible');
-      document.body.style.cursor = 'default';
-      setTimeout(() => document.getElementById("passwordInput").focus(), 300);
+  let currentStep = 0;
+
+  function appendOutput(text) {
+    output.textContent += text + '\n';
+    terminal.scrollTop = terminal.scrollHeight;
+  }
+
+  function showPrompt() {
+    appendOutput('\n' + steps[currentStep].prompt);
+  }
+
+  function clearInput() {
+    input.value = '';
+  }
+
+  function proceed() {
+    currentStep++;
+    if(currentStep < steps.length) {
+      showPrompt();
+    } else {
+      // Finished all steps
+      loadFinalPage();
     }
+  }
 
-    function showFinal() {
-      loginPage.classList.remove('visible');
-      finalPage.classList.add('visible');
-    }
+  function loadFinalPage() {
+    // Clear terminal and load the final image full screen
+    document.body.innerHTML = '';
+    const img = document.createElement('img');
+    img.src = 'https://images.immediate.co.uk/production/volatile/sites/7/2019/12/80.-OPENER_-Founding-Fathers-5a352df.jpg?quality=90&resize=980,654';
+    img.style.width = '100vw';
+    img.style.height = '100vh';
+    img.style.objectFit = 'contain';
+    img.style.background = 'black';
+    document.body.style.margin = '0';
+    document.body.style.background = 'black';
+    document.body.appendChild(img);
+  }
 
-    function updateCountdown() {
-      const now = new Date().getTime();
-      const distance = targetDate - now;
-
-      if (distance <= 0) {
-        showLogin();
-        return;
-      }
-
-      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-      countdownEl.textContent =
-        `${String(days).padStart(2, '0')}:${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    }
-
-    function checkPassword() {
-      const val = document.getElementById('passwordInput').value;
-      if (val === 'happyindependenceday2025') {
-        showFinal();
+  input.addEventListener('keydown', e => {
+    if(e.key === 'Enter') {
+      const val = input.value;
+      appendOutput('> ' + val);
+      if(steps[currentStep].validator(val)) {
+        appendOutput(steps[currentStep].success);
+        if(steps[currentStep].finalStep) {
+          loadFinalPage();
+          return;
+        }
+        proceed();
       } else {
-        alert("ACCESS DENIED");
+        appendOutput('ERROR: Incorrect input. Try again.');
       }
+      clearInput();
+      e.preventDefault();
     }
+  });
 
-    // Launch
-    showCountdown();
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
-  </script>
+  // Initialize terminal
+  appendOutput('Welcome to blacksun\n');
+  showPrompt();
+
+  // Focus input on load and click
+  terminal.addEventListener('click', () => input.focus());
+  window.addEventListener('load', () => input.focus());
+})();
+</script>
 </body>
 </html>
