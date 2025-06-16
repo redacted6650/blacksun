@@ -1,190 +1,262 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>blacksun</title>
-<style>
-  /* Base styles */
-  html, body {
-    margin: 0; padding: 0;
-    background: black;
-    color: #00ff00;
-    font-family: 'Courier New', monospace;
-    height: 100vh;
-    overflow: hidden;
-  }
-  body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  #terminal {
-    background: #000;
-    border: 2px solid #00ff00;
-    width: 90vw;
-    max-width: 800px;
-    height: 70vh;
-    padding: 20px;
-    box-sizing: border-box;
-    overflow-y: auto;
-    user-select: none;
-  }
+  <meta charset="UTF-8" />
+  <title>blacksun</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
-  #output {
-    white-space: pre-wrap;
-    line-height: 1.3;
-  }
+    html, body {
+      margin: 0; padding: 0;
+      height: 100vh;
+      background: black;
+      color: white;
+      font-family: 'Share Tech Mono', monospace;
+      overflow: hidden;
+      user-select: none;
+    }
 
-  #inputLine {
-    display: flex;
-  }
+    #countdown {
+      font-size: 6vw;
+      font-weight: 700;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      letter-spacing: 0.2em;
+      user-select: none;
+      cursor: default;
+    }
 
-  #prompt {
-    flex-shrink: 0;
-    margin-right: 5px;
-  }
+    /* Tiny bypass pixel in top-left */
+    #bypass {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      width: 12px;
+      height: 12px;
+      /* Invisible but still clickable */
+      opacity: 0;
+      cursor: crosshair;
+      user-select: none;
+      z-index: 1000;
+    }
 
-  #cmdInput {
-    flex-grow: 1;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: #00ff00;
-    font-family: monospace;
-    font-size: 1rem;
-  }
+    #terminal-container {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 35vh;
+      background: #000;
+      border-top: 2px solid white;
+      box-sizing: border-box;
+      padding: 10px 20px;
+      overflow-y: auto;
+      color: white;
+      font-size: 1.1rem;
+      line-height: 1.4;
+    }
 
-  /* Blinking cursor */
-  @keyframes blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0; }
-  }
-  #cmdInput::after {
-    content: '_';
-    animation: blink 1s step-start infinite;
-  }
-</style>
+    #terminal-output {
+      white-space: pre-wrap;
+      max-height: 85%;
+      overflow-y: auto;
+      margin-bottom: 8px;
+    }
+
+    #input-line {
+      display: flex;
+      align-items: center;
+    }
+
+    #prompt {
+      user-select: none;
+      margin-right: 8px;
+      font-weight: 700;
+    }
+
+    #terminal-input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: white;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.1rem;
+      flex-grow: 1;
+      caret-color: white;
+    }
+
+    /* Blinking cursor for input */
+    #terminal-input::placeholder {
+      color: #555;
+    }
+
+    /* Scrollbar for terminal output */
+    #terminal-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    #terminal-container::-webkit-scrollbar-track {
+      background: #222;
+    }
+    #terminal-container::-webkit-scrollbar-thumb {
+      background: #555;
+    }
+  </style>
 </head>
 <body>
-<div id="terminal" tabindex="0" aria-label="Terminal interface">
-  <div id="output"></div>
-  <div id="inputLine">
-    <div id="prompt">&gt;</div>
-    <input type="text" id="cmdInput" autocomplete="off" autofocus spellcheck="false" />
+  <div id="countdown"></div>
+  <div id="bypass" title="???"></div>
+
+  <div id="terminal-container" tabindex="0" aria-label="Terminal window">
+    <div id="terminal-output"></div>
+    <div id="input-line">
+      <div id="prompt">&gt;</div>
+      <input type="text" id="terminal-input" autocomplete="off" spellcheck="false" autofocus />
+    </div>
   </div>
-</div>
 
 <script>
 (() => {
-  const terminal = document.getElementById('terminal');
-  const output = document.getElementById('output');
-  const input = document.getElementById('cmdInput');
+  // ====== Countdown to July 4, 2025 12:00:00 PM EST (UTC-4) ======
+  const countdownEl = document.getElementById('countdown');
+  const bypassEl = document.getElementById('bypass');
+  const terminalContainer = document.getElementById('terminal-container');
+  const terminalOutput = document.getElementById('terminal-output');
+  const terminalInput = document.getElementById('terminal-input');
 
-  // Hide blinking cursor on input to avoid confusion
-  input.style.caretColor = '#00ff00';
+  // Target date/time UTC (July 4 2025 16:00 UTC == 12:00 EST UTC-4)
+  const targetDate = new Date(Date.UTC(2025, 6 - 1, 4, 16, 0, 0)); // June is 5, July is 6 (month 0-based)
 
-  // Terminal state and prompts
-  const steps = [
+  // Actually July is month 6 (zero-based index 6 = July)
+  // Correction: months zero-indexed: July=6 so Date.UTC(2025, 6, 4, 16, 0, 0)
+  // So fix above:
+  const correctedTargetDate = new Date(Date.UTC(2025, 6, 4, 16, 0, 0)); // July 4 2025 16:00 UTC (12pm EST)
+
+  // Helper: pad number to 2 digits
+  function pad2(num) {
+    return (num < 10 ? '0' : '') + num;
+  }
+
+  // Calculate remaining time
+  function updateCountdown() {
+    const now = new Date();
+    const diff = correctedTargetDate - now;
+    if (diff <= 0) {
+      countdownEl.style.display = 'none';
+      startTerminal();
+      return;
+    }
+    const days = Math.floor(diff / (1000*60*60*24));
+    const hours = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
+    const minutes = Math.floor((diff % (1000*60*60)) / (1000*60));
+    const seconds = Math.floor((diff % (1000*60)) / 1000);
+
+    countdownEl.textContent = `${pad2(days)}:${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`;
+  }
+
+  // Tiny bypass area — clicking it instantly shows terminal
+  bypassEl.addEventListener('click', e => {
+    e.stopPropagation();
+    countdownEl.style.display = 'none';
+    startTerminal();
+  });
+
+  // Terminal hard-coded puzzles (make harder for coders)
+  const puzzles = [
     {
-      prompt: 'Define a variable named "flag" and assign it the number 1',
-      validator: input => {
-        // Accept e.g. flag=1 or flag = 1
-        return /^\s*flag\s*=\s*1\s*;?\s*$/.test(input.toLowerCase());
-      },
-      success: 'Variable "flag" set. Proceeding...',
+      prompt: 'Init: set x to 7',
+      validator: input => /^x\s*=\s*7\s*;?$/.test(input.trim()),
+      success: 'x=7 set.',
     },
     {
-      prompt: 'Increment the variable "flag" by 4',
-      validator: input => {
-        // Accept: flag=flag+4 or flag+=4
-        return /^\s*flag\s*=\s*flag\s*\+\s*4\s*;?\s*$/.test(input.toLowerCase()) ||
-               /^\s*flag\s*\+=\s*4\s*;?\s*$/.test(input.toLowerCase());
-      },
-      success: 'flag incremented. Next step...',
+      prompt: 'Update: increment x by 10',
+      validator: input => /^(x\s*=\s*x\s*\+\s*10|x\s*\+=\s*10)\s*;?$/.test(input.trim()),
+      success: 'x incremented.',
     },
     {
-      prompt: 'What is the value of "flag"? (Just enter the number)',
-      validator: input => {
-        return input.trim() === '5';
-      },
-      success: 'Correct. Preparing final step...',
+      prompt: 'Calc: what is the value of x?',
+      validator: input => /^17$/.test(input.trim()),
+      success: 'Correct.',
     },
     {
-      prompt: 'Enter the secret command to unlock the final screen: type "open sesame"',
-      validator: input => {
-        return input.trim().toLowerCase() === 'open sesame';
-      },
-      success: 'Access granted. Loading...',
-      finalStep: true
+      prompt: 'Logic gate: true AND false equals?',
+      validator: input => /^(false|0)$/i.test(input.trim()),
+      success: 'Correct.',
+    },
+    {
+      prompt: 'Secret cmd (type exactly): sudo open sesame',
+      validator: input => /^sudo open sesame$/i.test(input.trim()),
+      success: 'Access granted.',
+      final: true,
     }
   ];
 
-  let currentStep = 0;
+  let currentPuzzle = 0;
 
-  function appendOutput(text) {
-    output.textContent += text + '\n';
-    terminal.scrollTop = terminal.scrollHeight;
+  function appendOutput(text, isError) {
+    terminalOutput.textContent += text + '\n';
+    if (isError) {
+      terminalOutput.style.color = 'red';
+      setTimeout(() => { terminalOutput.style.color = 'white'; }, 500);
+    }
+    terminalContainer.scrollTop = terminalContainer.scrollHeight;
   }
 
   function showPrompt() {
-    appendOutput('\n' + steps[currentStep].prompt);
+    appendOutput(`\n${puzzles[currentPuzzle].prompt}`);
   }
 
-  function clearInput() {
-    input.value = '';
+  function startTerminal() {
+    terminalContainer.style.display = 'block';
+    terminalInput.focus();
+    appendOutput('Welcome to blacksun terminal\n');
+    showPrompt();
   }
 
-  function proceed() {
-    currentStep++;
-    if(currentStep < steps.length) {
-      showPrompt();
-    } else {
-      // Finished all steps
-      loadFinalPage();
-    }
-  }
-
-  function loadFinalPage() {
-    // Clear terminal and load the final image full screen
+  function endTerminal() {
+    // Clear all and show final image fullscreen
     document.body.innerHTML = '';
     const img = document.createElement('img');
     img.src = 'https://images.immediate.co.uk/production/volatile/sites/7/2019/12/80.-OPENER_-Founding-Fathers-5a352df.jpg?quality=90&resize=980,654';
+    img.style.position = 'fixed';
+    img.style.top = '0';
+    img.style.left = '0';
     img.style.width = '100vw';
     img.style.height = '100vh';
     img.style.objectFit = 'contain';
     img.style.background = 'black';
-    document.body.style.margin = '0';
     document.body.style.background = 'black';
     document.body.appendChild(img);
   }
 
-  input.addEventListener('keydown', e => {
-    if(e.key === 'Enter') {
-      const val = input.value;
-      appendOutput('> ' + val);
-      if(steps[currentStep].validator(val)) {
-        appendOutput(steps[currentStep].success);
-        if(steps[currentStep].finalStep) {
-          loadFinalPage();
+  terminalInput.addEventListener('keydown', e => {
+    if(e.key === 'Enter'){
+      const val = terminalInput.value.trim();
+      if(!val) return;
+
+      appendOutput(`> ${val}`);
+
+      if(puzzles[currentPuzzle].validator(val)){
+        appendOutput(puzzles[currentPuzzle].success);
+        if(puzzles[currentPuzzle].final){
+          endTerminal();
           return;
         }
-        proceed();
+        currentPuzzle++;
+        showPrompt();
       } else {
-        appendOutput('ERROR: Incorrect input. Try again.');
+        appendOutput('Error: invalid input. Try again.', true);
       }
-      clearInput();
-      e.preventDefault();
+      terminalInput.value = '';
     }
   });
 
-  // Initialize terminal
-  appendOutput('Welcome to blacksun\n');
-  showPrompt();
-
-  // Focus input on load and click
-  terminal.addEventListener('click', () => input.focus());
-  window.addEventListener('load', () => input.focus());
+  // Initialize countdown update every second
+  updateCountdown();
+  const intervalId = setInterval(updateCountdown, 1000);
 })();
 </script>
 </body>
