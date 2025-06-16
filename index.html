@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>███ SYSTEM</title>
+  <style>
+    html, body {
+      background-color: black;
+      color: lime;
+      font-family: monospace;
+      height: 100%;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    #countdown, #login, #final {
+      display: none;
+    }
+    input[type="password"] {
+      padding: 10px;
+      background: black;
+      border: 1px solid lime;
+      color: lime;
+      font-family: monospace;
+      font-size: 1rem;
+    }
+    button {
+      padding: 5px 15px;
+      background: lime;
+      border: none;
+      font-family: monospace;
+      cursor: pointer;
+    }
+    img {
+      max-width: 90%;
+      max-height: 90vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="countdown"></div>
+  <div id="login">
+    <p>Access Code Required:</p>
+    <input type="password" id="password">
+    <button onclick="checkPassword()">Enter</button>
+  </div>
+  <div id="final">
+    <img src="https://images.immediate.co.uk/production/volatile/sites/7/2019/12/80.-OPENER_-Founding-Fathers-5a352df.jpg?quality=90&resize=980,654" alt="Founding Fathers">
+  </div>
+
+  <script>
+    const targetDate = new Date("July 4, 2025 12:00:00 GMT-0400").getTime();
+
+    const countdownEl = document.getElementById('countdown');
+    const loginEl = document.getElementById('login');
+    const finalEl = document.getElementById('final');
+
+    function updateCountdown() {
+      const now = new Date().getTime();
+      const distance = targetDate - now;
+
+      if (distance <= 0) {
+        countdownEl.style.display = "none";
+        loginEl.style.display = "flex";
+        return;
+      }
+
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      countdownEl.innerHTML = `Countdown to ██ RELEASE: ${String(days).padStart(2, '0')}:${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      countdownEl.style.display = "block";
+    }
+
+    function checkPassword() {
+      const input = document.getElementById("password").value;
+      if (input === "happyindependenceday2025") {
+        loginEl.style.display = "none";
+        finalEl.style.display = "block";
+      } else {
+        alert("Incorrect password. Access denied.");
+      }
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  </script>
+</body>
+</html>
